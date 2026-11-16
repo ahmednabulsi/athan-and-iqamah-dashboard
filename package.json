@@ -1,0 +1,16 @@
+{
+  "name": "prayer-dash-tv",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "rm -rf ../public/prayer-dash/_assets && vite build"
+  },
+  "dependencies": {
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.0",
+    "autoprefixer": "^10.5.2",
+    "vite": "^8.0.14"
+  }
+}

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prayer Dashboard</title>
+  <!-- Array/String methods that the build target cannot transpile (they are runtime APIs,
+       not syntax). Cheap Android frames run an un-updatable WebView - Chromium 83 on the
+       Rockchip MWE-004 - which predates all of these. Must run before the bundle.
+       Defined non-enumerable, so `for...in` over an array is unaffected. -->
+  <script>
+    (function () {
+      function def(obj, name, fn) {
+        if (obj[name]) return;
+        try {
+          Object.defineProperty(obj, name, {
+            value: fn, writable: true, configurable: true, enumerable: false
+          });
+        } catch (e) { /* frozen prototype: leave the engine's own behaviour alone */ }
+      }
+      var A = Array.prototype, S = String.prototype;
+      def(A, 'findLast', function (f, t) {
+        for (var i = this.length - 1; i >= 0; i--) if (f.call(t, this[i], i, this)) return this[i];
+        return undefined;
+      });
+      def(A, 'findLastIndex', function (f, t) {
+        for (var i = this.length - 1; i >= 0; i--) if (f.call(t, this[i], i, this)) return i;
+        return -1;
+      });
+      def(A, 'at', function (n) {
+        n = Math.trunc(n) || 0; if (n < 0) n += this.length;
+        return (n < 0 || n >= this.length) ? undefined : this[n];
+      });
+      def(A, 'toSorted', function (c) { return A.slice.call(this).sort(c); });
+      def(A, 'toReversed', function () { return A.slice.call(this).reverse(); });
+      def(S, 'at', function (n) {
+        n = Math.trunc(n) || 0; if (n < 0) n += this.length;
+        return (n < 0 || n >= this.length) ? undefined : this[n];
+      });
+      def(S, 'replaceAll', function (s, r) {
+        if (Object.prototype.toString.call(s) === '[object RegExp]') return this.replace(s, r);
+        return this.split(s).join(r);
+      });
+      def(Object, 'hasOwn', function (o, k) {
+        return Object.prototype.hasOwnProperty.call(o, k);
+      });
+    })();
+  </script>
+
+  <!-- Flex `gap` shim. `gap` inside a flex container is Chrome 84+; grid gap is older,
+       so `@supports (gap:1px)` cannot tell them apart and a CSS-only fallback is
+       impossible. The frames this dashboard runs on ship an un-updatable Chromium 83,
+       where every flex gap is ignored and the children sit flush - prayer tiles touching,
+       icons jammed against labels. This measures real support once and, only when it is
+       missing, mirrors each flex container's computed gap onto its children as margins.
+       A no-op on every modern browser: it returns before touching the DOM. -->
+  <script>
+    (function () {
+      function supportsFlexGap() {
+        var f = document.createElement('div');
+        f.style.cssText = 'display:flex;flex-direction:column;row-gap:1px;position:absolute;visibility:hidden';
+        f.appendChild(document.createElement('div'));
+        f.appendChild(document.createElement('div'));
+        document.body.appendChild(f);
+        var ok = f.scrollHeight === 1;
+        f.parentNode.removeChild(f);
+        return ok;
+      }
+      function start() {
+        if (supportsFlexGap()) return;
+        document.documentElement.className += ' no-flex-gap';
+        var queued = false;
+        function apply() {
+          queued = false;
+          var els = document.querySelectorAll('*');
+          for (var i = 0; i < els.length; i++) {
+            var el = els[i];
+            if (!el.children || !el.children.length) continue;
+            var cs = window.getComputedStyle(el);
+            if (cs.display !== 'flex' && cs.display !== 'inline-flex') continue;
+            var rg = parseFloat(cs.rowGap) || 0;
+            var cg = parseFloat(cs.columnGap) || 0;
+            if (!rg && !cg) continue;
+            var column = cs.flexDirection.indexOf('column') === 0;
+            var rtl = cs.direction === 'rtl';
+            var size = column ? rg : cg;
+            if (!size) continue;
+            var prop = column ? 'marginTop' : (rtl ? 'marginRight' : 'marginLeft');
+            for (var j = 0; j < el.children.length; j++) {
+              el.children[j].style[prop] = j === 0 ? '' : size + 'px';
+            }
+          }
+        }
+        function schedule() {
+          if (queued) return;
+          queued = true;
+          window.setTimeout(apply, 150);
+        }
+        apply();
+        if (window.MutationObserver) {
+          new MutationObserver(schedule).observe(document.body, {
+            childList: true, subtree: true, attributes: true,
+            attributeFilter: ['class', 'style', 'dir']
+          });
+        } else {
+          window.setInterval(apply, 2000);
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+      } else { start(); }
+    })();
+  </script>
+  <style>
+    @font-face {
+      font-family: 'Inter';
+      src: url('./fonts/Inter/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Inter';
+      src: url('./fonts/Inter/Inter-Italic-VariableFont_opsz,wght.ttf') format('truetype');
+      font-weight: 100 900;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Montserrat';
+      src: url('./fonts/Montserrat/Montserrat-VariableFont_wght.ttf') format('truetype');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Montserrat';
+      src: url('./fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf') format('truetype');
+      font-weight: 100 900;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Noto Nastaliq Urdu';
+      src: url('./fonts/Noto_Nastaliq_Urdu/NotoNastaliqUrdu-VariableFont_wght.ttf') format('truetype');
+      font-weight: 400 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Roboto';
+      src: url('./fonts/Roboto/Roboto-VariableFont_wdth,wght.ttf') format('truetype');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Roboto';
+      src: url('./fonts/Roboto/Roboto-Italic-VariableFont_wdth,wght.ttf') format('truetype');
+      font-weight: 100 900;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Lato';
+      src: url('./fonts/Lato/Lato-Thin.ttf') format('truetype');
+      font-weight: 100;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Lato';
+      src: url('./fonts/Lato/Lato-Light.ttf') format('truetype');
+      font-weight: 300;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Lato';
+      src: url('./fonts/Lato/Lato-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Lato';
+      src: url('./fonts/Lato/Lato-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Lato';
+      src: url('./fonts/Lato/Lato-Black.ttf') format('truetype');
+      font-weight: 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Lato';
+      src: url('./fonts/Lato/Lato-ThinItalic.ttf') format('truetype');
+      font-weight: 100;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Lato';
+      src: url('./fonts/Lato/Lato-LightItalic.ttf') format('truetype');
+      font-weight: 300;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Lato';
+      src: url('./fonts/Lato/Lato-Italic.ttf') format('truetype');
+      font-weight: 400;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Lato';
+      src: url('./fonts/Lato/Lato-BoldItalic.ttf') format('truetype');
+      font-weight: 700;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Lato';
+      src: url('./fonts/Lato/Lato-BlackItalic.ttf') format('truetype');
+      font-weight: 900;
+      font-style: italic;
+      font-display: swap;
+    }
+  </style>
+  <!-- Cairo: the typeface the Prayer Frame layout (layout-11) is designed in.
+       On an offline frame this simply falls back to the bundled stack. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400..900&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-B19V7T7PPV"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-B19V7T7PPV', { send_page_view: false });
+  </script>
+  <style>* { user-select: none; -webkit-user-select: none; }</style>
+
+  <!-- Boot watchdog. A frame opens this page seconds after power-on, before Wi-Fi has
+       associated: tv.html itself can come back from the WebView cache while the module
+       bundle below 404s or times out. No app code runs in that case, so nothing inside
+       the app can recover it - the screen just sits on a solid background. Watch from
+       the page itself instead: if #app never gets a child, reload until it does. -->
+  <script>
+    (function () {
+      var CHECK_MS = 2000;
+      var GRACE_MS = 8000;        // the slowest frame we ship on mounts Vue well inside this
+      var SLOW_AFTER = 5;         // attempts before easing off, so a genuinely broken
+      var SLOW_FACTOR = 4;        // build does not reload at full speed all night
+      var KEY = 'dashBootAttempts';
+
+      function attempts() {
+        try { return parseInt(sessionStorage.getItem(KEY), 10) || 0; } catch (e) { return 0; }
+      }
+      function setAttempts(n) {
+        try { sessionStorage.setItem(KEY, String(n)); } catch (e) { /* no storage: still retry */ }
+      }
+
+      var startedAt = Date.now();
+      var tries = attempts();
+      var grace = GRACE_MS * (tries >= SLOW_AFTER ? SLOW_FACTOR : 1);
+
+      var timer = window.setInterval(function () {
+        var app = document.getElementById('app');
+        // Either signal is proof the bundle executed; the flag also keeps a layout
+        // that happens to render nothing from being reloaded forever.
+        if (window.__dashMounted || (app && app.children.length)) {
+          window.clearInterval(timer);
+          setAttempts(0);
+          return;
+        }
+        if (Date.now() - startedAt < grace) return;
+        window.clearInterval(timer);
+        setAttempts(tries + 1);
+        window.location.reload();
+      }, CHECK_MS);
+    })();
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

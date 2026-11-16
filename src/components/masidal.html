@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prayer Timings Display</title>
+<style>
+  :root {
+    --primary-text: #333;
+    --muted-text: #666;
+    --accent-teal: #2cb1b6;
+    --accent-orange: #f28b30;
+    --accent-red: #c31b1b;
+    --card-bg: rgba(245, 245, 245, 0.85);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #e0e0e0;
+  }
+
+  /* Simulating the black tablet/screen bezel */
+  .device-frame {
+    background-color: #050505;
+    padding: 25px;
+    border-radius: 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    width: 1200px;
+    height: 800px;
+  }
+
+  .display-screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    background: url('https://as1.ftcdn.net/v2/jpg/02/32/60/04/1000_F_232600481_4wvSAlNwWIh1yiHUGC9XweB99H6k3Mpy.jpg') center/cover no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px;
+  }
+
+  /* --- Top Section --- */
+  .top-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    padding-top: 20px;
+  }
+
+  .pill {
+    background: linear-gradient(135deg, #ff9e44, #f28b30);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(242, 139, 48, 0.3);
+  }
+  
+  .pill span {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    opacity: 0.9;
+  }
+
+  .pill strong {
+    font-size: 1.2rem;
+  }
+
+  .pill small {
+    font-size: 0.7rem;
+    margin-left: 2px;
+  }
+
+  .sun-times {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  /* --- Main Clock Card --- */
+  .main-clock {
+    background: white;
+    position: relative;
+    border-radius: 30px;
+    padding: 30px 80px 20px;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    width: 600px;
+    margin: 0 auto;
+  }
+
+  .weather {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    border: 1px solid #eee;
+    border-radius: 15px;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    color: var(--muted-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .time-display {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 9rem;
+    color: #111;
+    line-height: 1.1;
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    letter-spacing: -2px;
+  }
+
+  .time-display .ampm {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    font-size: 3rem;
+    margin-left: 10px;
+    letter-spacing: 0;
+  }
+
+  .date-display {
+    color: var(--muted-text);
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    margin-top: 10px;
+    text-transform: uppercase;
+  }
+
+  /* --- Bottom Section (Prayers) --- */
+  .bottom-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .prayers-row {
+    display: flex;
+    gap: 15px;
+    flex: 1;
+  }
+
+  .prayer-card {
+    background: var(--card-bg);
+    padding: 20px 10px;
+    border-radius: 20px;
+    flex: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+  }
+
+  .prayer-card.active {
+    background: linear-gradient(135deg, #38d39f, var(--accent-teal));
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(44, 177, 182, 0.4);
+  }
+
+  .prayer-card .label {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    color: var(--muted-text);
+  }
+
+  .prayer-card.active .label {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .prayer-card .sub-time {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .prayer-card .prayer-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 8px 0;
+    letter-spacing: 1px;
+  }
+
+  .prayer-card small {
+    font-size: 0.7rem;
+    margin-left: 2px;
+  }
+
+  /* --- Next Prayer Circle --- */
+  .next-prayer-wrapper {
+    margin-left: 30px;
+    padding: 5px;
+    border: 2px dashed #e85d5d;
+    border-radius: 50%;
+  }
+
+  .next-prayer-circle {
+    background: linear-gradient(135deg, #d32f2f, #9a0000);
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    box-shadow: 0 8px 20px rgba(195, 27, 27, 0.4);
+  }
+
+  .next-prayer-circle .name {
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+  }
+
+  .next-prayer-circle .label {
+    font-size: 0.7rem;
+    margin-bottom: -5px;
+    opacity: 0.9;
+  }
+
+  .next-prayer-circle .countdown {
+    font-size: 3.5rem;
+    font-weight: 300;
+    line-height: 1;
+  }
+
+  /* --- Footer --- */
+  .footer {
+    position: absolute;
+    bottom: 25px;
+    left: 40px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--primary-text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: 1px;
+  }
+
+  .footer .plus-icon {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--primary-text);
+    border-radius: 50%;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="device-frame">
+  <div class="display-screen">
+    
+    <div class="top-section">
+      <div class="pill jumuah">
+        <span>JUMU'AH 1</span>
+        <strong>2:00<small>PM</small></strong>
+      </div>
+
+      <div class="main-clock">
+        <div class="time-display">
+          2:53<span class="ampm">PM</span>
+        </div>
+        <div class="date-display">
+          16 RABI AL-AWWAL | MON, NOV 02
+        </div>
+      </div>
+
+      <div class="sun-times">
+        <div class="pill sun">
+          <span>SUNRISE</span>
+          <strong>6:25<small>AM</small></strong>
+        </div>
+        <div class="pill sun">
+          <span>SUNSET</span>
+          <strong>4:43<small>PM</small></strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-section">
+      <div class="prayers-row">
+        <div class="prayer-card">
+          <span class="label">ATHAN</span>
+          <span class="sub-time">4:52<small>AM</small></span>
+          <span class="prayer-name">FAJR</span>
+          <span class="sub-time">5:15<small>AM</small></span>
+          <span class="label">IQAMAH</span>
+        </div>
+        <div class="prayer-card active">
+          <span class="label">ATHAN</span>
+          <span class="sub-time">11:44<small>AM</small></span>
+          <span class="prayer-name">DHUHR</span>
+          <span class="sub-time">1:30<small>PM</small></span>
+          <span class="label">IQAMAH</span>
+        </div>
+        <div class="prayer-card">
+          <span class="label">ATHAN</span>
+          <span class="sub-time">3:01<small>PM</small></span>
+          <span class="prayer-name">ASR</span>
+          <span class="sub-time">6:45<small>PM</small></span>
+          <span class="label">IQAMAH</span>
+        </div>
+        <div class="prayer-card">
+          <span class="label">ATHAN</span>
+          <span class="sub-time">4:43<small>PM</small></span>
+          <span class="prayer-name">MAGHRIB</span>
+          <span class="sub-time">4:48<small>PM</small></span>
+          <span class="label">IQAMAH</span>
+        </div>
+        <div class="prayer-card">
+          <span class="label">ATHAN</span>
+          <span class="sub-time">6:01<small>PM</small></span>
+          <span class="prayer-name">ISHA</span>
+          <span class="sub-time">10:30<small>PM</small></span>
+          <span class="label">IQAMAH</span>
+        </div>
+      </div>
+
+      <div class="next-prayer-wrapper">
+        <div class="next-prayer-circle">
+          <span class="name">ASR</span>
+          <span class="label">NEXT IN</span>
+          <span class="countdown">8</span>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+</div>
+
+</body>
+</html>
