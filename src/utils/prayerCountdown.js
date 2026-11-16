@@ -15,6 +15,11 @@ export const PRAYER_ORDER = [
   { key: 'isha',    isFajr: false, isDhuhr: false },
 ]
 
+/** Sunrise is a moment, not a prayer - no adhan, no iqamah - so it carries its own
+ *  key and kind rather than being squeezed into PRAYER_ORDER. */
+export const SUNRISE_KEY = 'sunrise'
+export const SUNRISE_KIND = 'sunrise'
+
 /** Feed suffixes the countdown watches: 'athan' | 'iqamah' | 'both'. */
 export function countdownKinds(setting) {
   const v = String(setting || 'athan')
@@ -38,7 +43,7 @@ export function countdownLeadMs(setting) {
  *        layout resolves feed times against its own base date.
  * @returns { key, kind, at } with `at` rolled to tomorrow when the day is done.
  */
-export function findNextEvent(resolve, kinds, now) {
+export function findNextEvent(resolve, kinds, now, { includeSunrise = false } = {}) {
   let best = null
   for (const { key } of PRAYER_ORDER) {
     for (const kind of kinds) {
@@ -46,6 +51,17 @@ export function findNextEvent(resolve, kinds, now) {
       if (t && t > now && (!best || t < best.at)) best = { key, kind, at: t }
     }
   }
+
+  // Sunrise is opt-in and is not a prayer: it has a single time with no iqamah, so it
+  // is resolved once under its own kind rather than against `kinds`. It still competes
+  // on time, so a sunrise shortly after Fajr wins the countdown that follows Fajr.
+  if (includeSunrise) {
+    const t = resolve(SUNRISE_KEY, SUNRISE_KIND)
+    if (t && t > now && (!best || t < best.at)) {
+      best = { key: SUNRISE_KEY, kind: SUNRISE_KIND, at: t }
+    }
+  }
+
   if (best) return best
 
   // Everything today has passed: roll over to tomorrow's earliest eligible event.

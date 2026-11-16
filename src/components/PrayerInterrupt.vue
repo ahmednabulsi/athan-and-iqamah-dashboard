@@ -79,7 +79,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { debugNow, clockOffsetMs, useDebugClock } from '../utils/debugClock.js'
 import { getPrayerDateTime, formatClock } from '../utils/prayerTime.js'
 import { useLayoutLang } from '../utils/layoutI18n.js'
-import { countdownKinds, countdownLeadMs, findNextEvent, countdownText, PRAYER_ORDER }
+import { countdownKinds, countdownLeadMs, findNextEvent, countdownText, PRAYER_ORDER, SUNRISE_KEY }
   from '../utils/prayerCountdown.js'
 
 const props = defineProps({
@@ -90,6 +90,9 @@ const props = defineProps({
   isAthanPlaying: { type: Boolean, default: false },
   isAthanMuted:   { type: Boolean, default: false },
   countdownFor:     { type: String, default: 'athan' },
+  /** Counts down to sunrise as well. Off by default: it is not a prayer, and most
+   *  boards do not want a takeover for it. */
+  countdownSunrise: { type: Boolean, default: false },
   countdownLeadMin: { type: [Number, String], default: 1 },
   timeFormat:       { type: String, default: '12' },
   // Which screens this instance owns. Layout 3 draws its own athan takeover but has
@@ -103,12 +106,16 @@ const emit = defineEmits(['toggle-athan-mute', 'stop-athan'])
 
 const { dir, T } = useLayoutLang(props, {
   en: {
-    timeFor: kind => `Time for ${kind === 'iqamah' ? 'Iqamah' : 'Athan'}`,
-    at: kind => `${kind === 'iqamah' ? 'Iqamah' : 'Adhan'} at`,
+    timeFor: kind =>
+      kind === 'sunrise' ? 'Sunrise' : `Time for ${kind === 'iqamah' ? 'Iqamah' : 'Athan'}`,
+    at: kind =>
+      kind === 'sunrise' ? 'Sunrise at' : `${kind === 'iqamah' ? 'Iqamah' : 'Adhan'} at`,
   },
   ar: {
-    timeFor: kind => `حان موعد ${kind === 'iqamah' ? 'الإقامة' : 'الأذان'}`,
-    at: kind => `${kind === 'iqamah' ? 'الإقامة' : 'الأذان'} الساعة`,
+    timeFor: kind =>
+      kind === 'sunrise' ? 'الشروق' : `حان موعد ${kind === 'iqamah' ? 'الإقامة' : 'الأذان'}`,
+    at: kind =>
+      kind === 'sunrise' ? 'الشروق الساعة' : `${kind === 'iqamah' ? 'الإقامة' : 'الأذان'} الساعة`,
   },
 })
 
@@ -138,6 +145,11 @@ onUnmounted(() => {
 })
 
 const resolve = (key, kind) => {
+  // Sunrise is a bare field, not `<key>_<kind>`, and always a morning time.
+  if (key === SUNRISE_KEY) {
+    const raw = props.prayerData?.sunrise
+    return raw ? getPrayerDateTime(raw, true, false, props.baseDate) : null
+  }
   const raw = props.prayerData?.[`${key}_${kind}`]
   if (!raw) return null
   const p = PRAYER_ORDER.find(x => x.key === key)
@@ -146,7 +158,10 @@ const resolve = (key, kind) => {
 
 const leadMs = computed(() => countdownLeadMs(props.countdownLeadMin))
 const nextEvent = computed(() =>
-  props.prayerData ? findNextEvent(resolve, countdownKinds(props.countdownFor), now.value) : null
+  props.prayerData
+    ? findNextEvent(resolve, countdownKinds(props.countdownFor), now.value,
+        { includeSunrise: props.countdownSunrise })
+    : null
 )
 
 /** The most recent athan that has already passed today. */

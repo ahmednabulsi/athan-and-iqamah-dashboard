@@ -30,6 +30,7 @@
       :focus-dim-default="l1Focus.dim"
       :focus-clock="l1Focus.clock"
       :countdown-for="countdownFor"
+      :countdown-sunrise="countdownSunrise"
       :photo-image="l1Photo.image"
       :photo-repeat="l1Photo.repeat"
       :text-color="l1Text"
@@ -63,6 +64,7 @@
       :focus-dim-default="l2Focus.dim"
       :focus-clock="l2Focus.clock"
       :countdown-for="countdownFor"
+      :countdown-sunrise="countdownSunrise"
       :photo-image="l2Photo.image"
       :photo-repeat="l2Photo.repeat"
       :text-color="l2Text"
@@ -94,6 +96,7 @@
       :focus-oled="l3Focus.oled"
       :focus-dim-default="l3Focus.dim"
       :countdown-for="countdownFor"
+      :countdown-sunrise="countdownSunrise"
       :photo-image="l3Photo.image"
       :photo-repeat="l3Photo.repeat"
       :night-focus-after-isha-min="l3NightFocus"
@@ -127,6 +130,7 @@
       :focus-dim-default="l4Focus.dim"
       :focus-clock="l4Focus.clock"
       :countdown-for="countdownFor"
+      :countdown-sunrise="countdownSunrise"
       :photo-image="l4Photo.image"
       :photo-repeat="l4Photo.repeat"
       :text-color="l4Text"
@@ -187,6 +191,7 @@
       :focus-dim-default="l7Focus.dim"
       :focus-clock="l7Focus.clock"
       :countdown-for="countdownFor"
+      :countdown-sunrise="countdownSunrise"
       :photo-image="l7Photo.image"
       :photo-repeat="l7Photo.repeat"
       :text-color="l7Text"
@@ -227,6 +232,7 @@
       :focus-dim-default="texFocus.dim"
       :focus-clock="texFocus.clock"
       :countdown-for="countdownFor"
+      :countdown-sunrise="countdownSunrise"
       :bg-image="texBgImage"
       :bg-repeat="texBgRepeat"
       :adhan-scale="texAdhanScale"
@@ -251,6 +257,7 @@
       :focus-dim-default="l9Focus.dim"
       :focus-clock="l9Focus.clock"
       :countdown-for="countdownFor"
+      :countdown-sunrise="countdownSunrise"
       :status="status"
       :tile-color="l9TileColor"
       :secondary-color="l9SecondaryColor"
@@ -281,6 +288,7 @@
       :focus-dim-default="l10Focus.dim"
       :focus-clock="l10Focus.clock"
       :countdown-for="countdownFor"
+      :countdown-sunrise="countdownSunrise"
       :photo-image="l10Photo.image"
       :photo-repeat="l10Photo.repeat"
       :primary-color="l10PrimaryColor"
@@ -319,6 +327,7 @@
       :is-athan-playing="isAthanPlaying"
       :is-athan-muted="isAthanMuted"
       :countdown-for="countdownFor"
+      :countdown-sunrise="countdownSunrise"
       :countdown-lead-min="countdownLead"
       @toggle-athan-mute="toggleAthanMute"
       @stop-athan="stopAthan"
@@ -333,6 +342,7 @@
       :is-athan-playing="isAthanPlaying"
       :is-athan-muted="isAthanMuted"
       :countdown-for="countdownFor"
+      :countdown-sunrise="countdownSunrise"
       :countdown-lead-min="countdownLead"
       :time-format="displayProps.timeFormat"
       :screens="interruptScreens"
@@ -391,6 +401,7 @@
       :night-focus-at="debugNightFocusAt"
       :athan-playing="isAthanPlaying"
       :countdown-for="countdownFor"
+      :countdown-sunrise="countdownSunrise"
       :countdown-lead="countdownLead"
       :dark-mode-pref="darkModePref"
       :dark-now="isDarkMode"
@@ -566,6 +577,8 @@ const paramEndingWith = suffix => {
 }
 const countdownFor  = ref(paramEndingWith('countdown_for')  || 'athan')
 const countdownLead = ref(paramEndingWith('countdown_lead') || '1')
+// Opt-in: sunrise is not a prayer, so a board only counts down to it when asked.
+const countdownSunrise = ref(paramEndingWith('countdown_sunrise') === 'true')
 
 // Masjid events. The week card joins the board's rotation; the after-athan screen
 // fills the gap between an athan and its iqamah. Both off-switchable per mosque.

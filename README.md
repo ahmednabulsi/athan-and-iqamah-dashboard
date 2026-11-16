@@ -49,6 +49,7 @@ Swap `bg=` to try each one:
 | `dark_mode` | `auto`, `on`, `off` | Night mode |
 | `hijri_offset` | `-2`…`2` | Shifts the Hijri date by days |
 | `show_seconds`, `show_hijri`, `show_sunrise`, `show_mosque` | `true`, `false` | Show or hide each element |
+| `countdown_sunrise` | `true`, `false` | Also count down to sunrise. Off by default: sunrise is not a prayer, so it gets a countdown but never an adhan screen |
 | `prayer_alerts` | `true`, `false` | Whether the adhan plays at all |
 | `<prayer>_trigger` | `off`, `azaan`, `iqamah` | When each prayer sounds (`fajr`, `dhuhr`, `asr`, `maghrib`, `isha`) |
 | `<prayer>_offset` | minutes | Minutes *before* iqamah, when the trigger is `iqamah` |
